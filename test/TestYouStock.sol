@@ -4,7 +4,7 @@ import "truffle/Assert.sol";
 import "truffle/DeployedAddresses.sol";
 import "../contracts/YouStockExchange.sol";
 
-contract TestRadex {
+contract TestYouStockExchange {
   function testTokenAddress() {
     YouStockExchange yse = YouStockExchange(DeployedAddresses.YouStockExchange());
     uint256 feeMultiplier = yse.feeMultiplier();
