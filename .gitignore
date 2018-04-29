@@ -5,3 +5,5 @@ coverage.json
 .als
 bin
 coverage
+
+*.swp

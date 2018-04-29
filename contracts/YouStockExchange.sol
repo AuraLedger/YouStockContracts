@@ -5,7 +5,7 @@ import "./ERC20.sol";
 import "./ERC223.sol";
 
 
-contract Radex is ContractReceiver {
+contract YouStockExchange is ContractReceiver {
   using SafeMath for uint256;
 
   struct Order {
@@ -40,7 +40,7 @@ contract Radex is ContractReceiver {
   event MarketMaker(address indexed _owner, address indexed _token, uint256 _amount, uint256 _time);
   event Trade(address indexed _from, address indexed _to, uint256 indexed _orderId, uint256 _soldTokens, uint256 _boughtTokens, uint256 _time);
 
-  function Radex() {
+  function YouStockExchange() {
     feeMultiplier = 1000;
     admin = msg.sender;
   }

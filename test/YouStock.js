@@ -1,72 +1,40 @@
-var Saturn = artifacts.require("./Saturn.sol");
-var AnotherToken = artifacts.require("./AnotherToken.sol");
-var Radex  = artifacts.require("./Radex.sol");
-var ERC20Demo = artifacts.require("./ERC20Demo.sol");
-var ERC223Upgrade = artifacts.require("./ERC223Upgrade.sol");
-
+var YouStockToken = artifacts.require("./YouStockToken.sol");
+var YouStock = artifacts.require("./YouStockExchange.sol");
 
 var Fraction = require('fractional').Fraction
 
-
-contract("Saturn", function(accounts) {
-  it("...should have 200,000 tokens with 4 decimals.", async () => {
-    const stn = await Saturn.deployed();
-
-    let emission = await stn.totalSupply();
-    let decimals = await stn.decimals();
-    let symbol   = await stn.symbol();
-    let name     = await stn.name();
-
-    assert.equal(emission, 2000000000, "Wrong total supply!");
-    assert.equal(decimals, 4, "Wrong decimals!");
-    assert.equal(symbol, "STN", "Wrong symbol!");
-    assert.equal(name, "Saturn", "Wrong name!");
-  });
-
+contract("YouStockToken", function(accounts) {
   it("...is transferable between accounts", async () => {
-    const stn = await Saturn.deployed();
-
-    await stn.transfer(accounts[1], 20);
-    let received = await stn.balanceOf(accounts[1]);
-
-    assert.equal(received.c[0], 20, "accounts[1] should have received 0.0020 STN")
-
-    await stn.transfer(accounts[0], 20, {from: accounts[1]});
-    let remains = await stn.balanceOf(accounts[1]);
-    assert.equal(remains.c[0], 0, "accounts[1] should have 0 STN remaining")
-  });
-});
-
-contract("AnotherToken", function(accounts) {
-  it("...is transferable between accounts", async () => {
-    const tkn = await AnotherToken.deployed();
+    const tkn = await YouStockToken.deployed();
 
     await tkn.transfer(accounts[1], 20);
     let received = await tkn.balanceOf(accounts[1]);
 
-    assert.equal(received.c[0], 20, "accounts[1] should have received 0.00020 ANT")
+    assert.equal(received.c[0], 20, "accounts[1] should have received 0.00020 YST")
 
     await tkn.transfer(accounts[0], 20, {from: accounts[1]});
     let remains = await tkn.balanceOf(accounts[1]);
-    assert.equal(remains.c[0], 0, "accounts[1] should have 0 ANT remaining")
+    assert.equal(remains.c[0], 0, "accounts[1] should have 0 YST remaining")
   });
 });
 
 
-contract("Radex", function(accounts) {
+contract("YouStockExchange", function(accounts) {
   function assertJump(error) {
     let revertOrInvalid = error.message.search('invalid opcode|revert')
     assert.isAbove(revertOrInvalid, -1, 'Invalid opcode error must be returned');
   }
 
-  it("Can receive and redeem Saturn tokens", async () => {
-    const stn = await Saturn.deployed();
-    const radex = await Radex.deployed();
+  it("Can receive and redeem YST tokens", async () => {
+    const yst = await YouStockToken.deployed();
+    const youStock = await YouStock.deployed();
 
-    await stn.transfer(radex.address, 1234);
+    await yst.transfer(youStock.address, 1234);
 
     let transferred = await stn.totalSupply() - await stn.balanceOf(accounts[0]);
-    assert.equal(transferred, 1234, "should have transferred 0.1234 STN");
+    assert.equal(transferred, 1234, "should have transferred 0.1234 YST");
+
+      //TODO: finish tests
 
     let received = await radex.balanceOf(stn.address, accounts[0]);
     assert.equal(transferred, received, "Should have received the same amount as transferred");

@@ -1,6 +1,6 @@
 {
-  "name": "Radex",
-  "version": "0.1.0",
+  "name": "YouStockContracts",
+  "version": "0.0.1",
   "private": true,
   "devDependencies": {
     "autoprefixer": "6.5.1",
