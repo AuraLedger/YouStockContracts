@@ -1,5 +1,5 @@
 var YouStockToken = artifacts.require("./YouStockToken.sol");
 
 module.exports = function(deployer, network, accounts) {
-  deployer.deploy(YouStockToken);
+  deployer.deploy(YouStockToken, 6, 10000, 'YouStockToken', 'YST');
 };

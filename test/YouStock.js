@@ -1,5 +1,5 @@
 var YouStockToken = artifacts.require("./YouStockToken.sol");
-var YouStock = artifacts.require("./YouStockExchange.sol");
+var YouStockExchange = artifacts.require("./YouStockExchange.sol");
 
 var Fraction = require('fractional').Fraction
 
@@ -27,36 +27,34 @@ contract("YouStockExchange", function(accounts) {
 
   it("Can receive and redeem YST tokens", async () => {
     const yst = await YouStockToken.deployed();
-    const youStock = await YouStock.deployed();
+    const youStockExchange = await YouStockExchange.deployed();
 
-    await yst.transfer(youStock.address, 1234);
+    await yst.transfer(youStockExchange.address, 1234);
 
-    let transferred = await stn.totalSupply() - await stn.balanceOf(accounts[0]);
+    let transferred = await yst.totalSupply() - await yst.balanceOf(accounts[0]);
     assert.equal(transferred, 1234, "should have transferred 0.1234 YST");
 
-      //TODO: finish tests
-
-    let received = await youStockExchange.balanceOf(stn.address, accounts[0]);
+    let received = await youStockExchange.balanceOf(yst.address, accounts[0]);
     assert.equal(transferred, received, "Should have received the same amount as transferred");
 
-    await youStockExchange.redeem(stn.address, 1200);
-    let remaining = await youStockExchange.balanceOf(stn.address, accounts[0]);
+    await youStockExchange.redeem(yst.address, 1200);
+    let remaining = await youStockExchange.balanceOf(yst.address, accounts[0]);
     assert.equal(remaining.c[0], 34, "Should have exactly 0.0034 STN remaining");
 
     try {
-      await youStockExchange.redeem(stn.address, 500);
+      await youStockExchange.redeem(yst.address, 500);
       assert.fail('Impossible to redeem tokens you dont own!');
     } catch(error) {
       assertJump(error);
     }
 
-    await youStockExchange.redeem(stn.address, 34);
-    remaining = await youStockExchange.balanceOf(stn.address, accounts[0]);
+    await youStockExchange.redeem(yst.address, 34);
+    remaining = await youStockExchange.balanceOf(yst.address, accounts[0]);
     assert.equal(remaining.c[0], 0, "Should have exactly 0.0000 STN remaining");
   });
 
   it("Can receive and redeem ether", async () => {
-    const stn = await Saturn.deployed();
+    const yst = await YouStockToken.deployed();
     const youStockExchange = await YouStockExchange.deployed();
 
     await youStockExchange.fund({from: accounts[0], value: 42});
@@ -80,16 +78,16 @@ contract("YouStockExchange", function(accounts) {
   });
 
   it("Prevents other users from stealing your funds", async () => {
-    const stn = await Saturn.deployed();
+    const yst = await YouStockToken.deployed();
     const youStockExchange = await YouStockExchange.deployed();
 
     await youStockExchange.fund({from: accounts[0], value: 42});
     let ethreceived = await youStockExchange.balanceOf(0x0, accounts[0]);
     assert.equal(ethreceived.c[0], 42, "should have transferred 42 wei");
 
-    await stn.transfer(youStockExchange.address, 1234);
-    let stnreceived = await youStockExchange.balanceOf(stn.address, accounts[0]);
-    assert.equal(stnreceived, 1234, "Should have received the same amount as transferred");
+    await yst.transfer(youStockExchange.address, 1234);
+    let ystreceived = await youStockExchange.balanceOf(yst.address, accounts[0]);
+    assert.equal(ystreceived, 1234, "Should have received the same amount as transferred");
 
     try {
       await youStockExchange.redeem(0x0, 1, {from: accounts[1]});
@@ -99,28 +97,28 @@ contract("YouStockExchange", function(accounts) {
     }
 
     try {
-      await youStockExchange.redeem(stn.address, 1, {from: accounts[1]});
+      await youStockExchange.redeem(yst.address, 1, {from: accounts[1]});
       assert.fail('Impossible to redeem tokens you dont own!');
     } catch(error) {
       assertJump(error);
     }
 
     await youStockExchange.redeem(0x0, 42);
-    await youStockExchange.redeem(stn.address, 1234);
+    await youStockExchange.redeem(yst.address, 1234);
 
     let ethremaining = await youStockExchange.balanceOf(0x0, accounts[0]);
     assert.equal(ethremaining.c[0], 0, "Should have exactly 0 wei remaining");
 
-    let stnremaining = await youStockExchange.balanceOf(stn.address, accounts[0]);
-    assert.equal(stnremaining.c[0], 0, "Should have exactly 0.0000 STN remaining");
+    let ystremaining = await youStockExchange.balanceOf(yst.address, accounts[0]);
+    assert.equal(ystremaining.c[0], 0, "Should have exactly 0.0000 STN remaining");
   });
 
   it("Can't create orders until you fund your balance", async () => {
-    const stn = await Saturn.deployed();
+    const yst = await YouStockToken.deployed();
     const youStockExchange = await YouStockExchange.deployed();
 
     try {
-      let order = await youStockExchange.createOrder(stn.address, 0x0, 10, 11, 12);
+      let order = await youStockExchange.createOrder(yst.address, 0x0, 10, 11, 12);
       assert.fail('You need to fund your account first!');
     } catch(error) {
       assertJump(error);
@@ -128,51 +126,51 @@ contract("YouStockExchange", function(accounts) {
   });
 
   it("Can create and cancel orders", async () => {
-    const stn = await Saturn.deployed();
+    const yst = await YouStockToken.deployed();
     const youStockExchange = await YouStockExchange.deployed();
 
     const etherDecimals = 18;
-    const stnDecimals   = 4;
+    const ystDecimals   = 4;
     const desiredPrice  = 1.1; // 1.1 ETH for 1 STN
 
-    await stn.transfer(youStockExchange.address, 12000); // deposit 1.2 STN
+    await yst.transfer(youStockExchange.address, 12000); // deposit 1.2 STN
 
-    var price = new Fraction(10**(etherDecimals - stnDecimals) * desiredPrice);
+    var price = new Fraction(10**(etherDecimals - ystDecimals) * desiredPrice);
 
-    let firstorder = await youStockExchange.createOrder(stn.address, 0x0, 10000, price.numerator, price.denominator);
+    let firstorder = await youStockExchange.createOrder(yst.address, 0x0, 10000, price.numerator, price.denominator);
     let firstOrderId = parseInt(firstorder.logs[0].args._id.toString());
 
     try {
-      let order = await youStockExchange.createOrder(stn.address, 0x0, 10000, price.numerator, price.denominator);
+      let order = await youStockExchange.createOrder(yst.address, 0x0, 10000, price.numerator, price.denominator);
       assert.fail('Not enough funds for another order!');
     } catch(error) {
       assertJump(error);
     }
 
-    let secondorder = await youStockExchange.createOrder(stn.address, 0x0, 2000, price.numerator, price.denominator);
+    let secondorder = await youStockExchange.createOrder(yst.address, 0x0, 2000, price.numerator, price.denominator);
     let secondOrderId = parseInt(secondorder.logs[0].args._id.toString());
 
     assert.equal(firstOrderId + 1, secondOrderId);
 
     try {
-      await youStockExchange.redeem(stn.address, 1);
+      await youStockExchange.redeem(yst.address, 1);
       assert.fail('Impossible to redeem tokens that are currently used for active orders.');
     } catch(error) {
       assertJump(error);
     }
 
     await youStockExchange.cancelOrder(secondOrderId);
-    await youStockExchange.redeem(stn.address, 2000);
+    await youStockExchange.redeem(yst.address, 2000);
 
     await youStockExchange.cancelOrder(firstOrderId);
-    await youStockExchange.redeem(stn.address, 10000);
+    await youStockExchange.redeem(yst.address, 10000);
 
-    remaining = await youStockExchange.balanceOf(stn.address, accounts[0]);
+    remaining = await youStockExchange.balanceOf(yst.address, accounts[0]);
     assert.equal(remaining.c[0], 0, "Should have exactly 0.0000 STN remaining");
   });
 
   it("Prevents other people from cancelling your orders", async () => {
-    const stn = await Saturn.deployed();
+    const stn = await YouStockToken.deployed();
     const youStockExchange = await YouStockExchange.deployed();
 
     await stn.transfer(youStockExchange.address, 1234);
@@ -194,7 +192,7 @@ contract("YouStockExchange", function(accounts) {
   });
 
   it("Allows to trade tokens for ETH", async () => {
-    const stn = await Saturn.deployed();
+    const stn = await YouStockToken.deployed();
     const youStockExchange = await YouStockExchange.deployed();
 
     const etherDecimals = 18;
@@ -242,7 +240,7 @@ contract("YouStockExchange", function(accounts) {
   });
 
   it("Allows to trade ETH for tokens", async () => {
-    const stn = await Saturn.deployed();
+    const stn = await YouStockToken.deployed();
     const youStockExchange = await YouStockExchange.deployed();
 
     const etherDecimals = 18;
@@ -288,7 +286,7 @@ contract("YouStockExchange", function(accounts) {
   });
 
   it("Allows to trade tokens for other tokens", async () => {
-    const stn   = await Saturn.deployed();
+    const stn   = await YouStockToken.deployed();
     const ant   = await YouStockToken.deployed();
     const youStockExchange = await YouStockExchange.deployed();
 
@@ -336,7 +334,7 @@ contract("YouStockExchange", function(accounts) {
   });
 
   it("Makes sure that you have enough ether to fulfill the order", async () => {
-    const stn = await Saturn.deployed();
+    const stn = await YouStockToken.deployed();
     const youStockExchange = await YouStockExchange.deployed();
 
     await stn.transfer(youStockExchange.address, 1234);
@@ -354,7 +352,7 @@ contract("YouStockExchange", function(accounts) {
   });
 
   it("Makes sure that you have enough tokens to fulfill the order", async () => {
-    const stn = await Saturn.deployed();
+    const stn = await YouStockToken.deployed();
     const youStockExchange = await YouStockExchange.deployed();
 
     await youStockExchange.fund({value: 12345678});
@@ -373,7 +371,7 @@ contract("YouStockExchange", function(accounts) {
   });
 
   it("Can't trade against an order that doesn't have enough capacity", async () => {
-    const stn = await Saturn.deployed();
+    const stn = await YouStockToken.deployed();
     const youStockExchange = await YouStockExchange.deployed();
 
     await youStockExchange.fund({value: 1234000000});
@@ -392,7 +390,7 @@ contract("YouStockExchange", function(accounts) {
   });
 
   it("Tracks balance of active orders in commitments", async () => {
-    const stn = await Saturn.deployed();
+    const stn = await YouStockToken.deployed();
     const youStockExchange = await YouStockExchange.deployed();
 
     await youStockExchange.fund({value: 1234});
@@ -423,7 +421,7 @@ contract("YouStockExchange", function(accounts) {
   });
 
   it("Can trade against an order until the funds run out", async () => {
-    const stn = await Saturn.deployed();
+    const stn = await YouStockToken.deployed();
     const youStockExchange = await YouStockExchange.deployed();
 
     await youStockExchange.fund({value: 1234, from: accounts[1]});
@@ -476,7 +474,7 @@ contract("YouStockExchange", function(accounts) {
   });
 
   it("Cannot create an order that trades a token for itself", async () => {
-    const stn = await Saturn.deployed();
+    const stn = await YouStockToken.deployed();
     const youStockExchange = await YouStockExchange.deployed();
 
     await stn.transfer(youStockExchange.address, 1234);
@@ -492,7 +490,7 @@ contract("YouStockExchange", function(accounts) {
   });
 
   it("Cannot execute an order that never existed", async () => {
-    const stn = await Saturn.deployed();
+    const stn = await YouStockToken.deployed();
     const youStockExchange = await YouStockExchange.deployed();
 
     await stn.transfer(youStockExchange.address, 1234);
@@ -511,7 +509,7 @@ contract("YouStockExchange", function(accounts) {
   });
 
   it("Cannot create an order that trades for 0 tokens", async () => {
-    const stn = await Saturn.deployed();
+    const stn = await YouStockToken.deployed();
     const youStockExchange = await YouStockExchange.deployed();
 
     await stn.transfer(youStockExchange.address, 1234);
@@ -527,7 +525,7 @@ contract("YouStockExchange", function(accounts) {
   });
 
   it("Cannot cancel an order that has been fulfilled", async () => {
-    const stn = await Saturn.deployed();
+    const stn = await YouStockToken.deployed();
     const youStockExchange = await YouStockExchange.deployed();
 
     await stn.transfer(youStockExchange.address, 1234);
@@ -549,7 +547,7 @@ contract("YouStockExchange", function(accounts) {
   });
 
   it("Does not let you trade against yourself", async () => {
-    const stn = await Saturn.deployed();
+    const stn = await YouStockToken.deployed();
     const youStockExchange = await YouStockExchange.deployed();
 
     await stn.transfer(youStockExchange.address, 1234);
@@ -571,7 +569,7 @@ contract("YouStockExchange", function(accounts) {
   });
 
   it("Prevents trade spam with zero value", async () => {
-    const stn = await Saturn.deployed();
+    const stn = await YouStockToken.deployed();
     const youStockExchange = await YouStockExchange.deployed();
 
     await stn.transfer(youStockExchange.address, 1234);
@@ -593,7 +591,7 @@ contract("YouStockExchange", function(accounts) {
   });
 
   it("Prevents creating orders with 0 amount or price", async () => {
-    const stn = await Saturn.deployed();
+    const stn = await YouStockToken.deployed();
     const youStockExchange = await YouStockExchange.deployed();
 
     await stn.transfer(youStockExchange.address, 1234);
@@ -623,7 +621,7 @@ contract("YouStockExchange", function(accounts) {
   });
 
   it("Cannot redeem nothing", async () => {
-    const stn = await Saturn.deployed();
+    const stn = await YouStockToken.deployed();
     const youStockExchange = await YouStockExchange.deployed();
 
     await stn.transfer(youStockExchange.address, 1234);
@@ -636,36 +634,5 @@ contract("YouStockExchange", function(accounts) {
     }
 
     await youStockExchange.redeem(stn.address, 1234);
-  });
-
-  it("Can deposit and withdraw ERC20 tokens", async () => {
-    const erc20  = await ERC20Demo.deployed();
-    const erc223 = await ERC223Upgrade.deployed();
-    const youStockExchange  = await YouStockExchange.deployed();
-
-    await youStockExchange.register(erc20.address, erc223.address);
-    let supply = await erc20.totalSupply();
-    await erc20.approve(erc223.address, supply.toString());
-
-    await erc223.transfer(youStockExchange.address, 1234);
-    let erc20balance = await erc20.balanceOf(youStockExchange.address);
-    let youStockExchangedeposit = await youStockExchange.balanceOf(erc223.address, accounts[0]);
-
-    assert.equal(erc20balance.toString(), youStockExchangedeposit.toString(), "Should have deposited erc20 tokens");
-
-    await youStockExchange.redeem(erc223.address, 1234);
-  });
-
-  it("Only admin can add an ERC20<>ERC223 upgrade", async () => {
-    const erc20  = await ERC20Demo.deployed();
-    const erc223 = await ERC223Upgrade.deployed();
-    const youStockExchange  = await YouStockExchange.deployed();
-
-    try {
-      await youStockExchange.register(erc20.address, erc223.address, {from: accounts[1]});
-      assert.fail('Cannot register ERC20 unless you are an admin');
-    } catch(error) {
-      assertJump(error);
-    }
   });
 });
