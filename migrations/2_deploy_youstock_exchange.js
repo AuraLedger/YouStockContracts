@@ -1,5 +1,5 @@
-var YouStockExchange = artifacts.require("./YouStockExchange.sol");
+var YouStock = artifacts.require("./YouStock.sol");
 
 module.exports = function(deployer, network, accounts) {
-  deployer.deploy(YouStockExchange);
+  deployer.deploy(YouStock);
 };
