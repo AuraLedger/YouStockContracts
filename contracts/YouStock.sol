@@ -9,7 +9,8 @@ pragma solidity ^0.4.22;
 // 1 - simplifies order filling
 // 2 - prevents unit bias in the market
 
-// other contracts must implement this method to receive native YouStock tokens
+// if you want to use native YouStock tokens in another contract, it must 
+// implement this method to receive the tokens
 contract YouStockReceiver {
     function receiveYouStockTokens(address token, address owner, uint64 amount) external;
 }
@@ -25,15 +26,15 @@ contract YouStock {
     uint64 constant TOTAL_SUPPLY = 10**12;
     
     // token => user => balance
-    mapping(address => mapping(address => uint64)) balances;
+    mapping(address => mapping(address => uint64)) public balances;
     
     // order books
     // token => orderId => order
-    mapping(address => mapping(uint64 => Order)) buys;
-    mapping(address => mapping(uint64 => Order)) sells;
+    mapping(address => mapping(uint64 => Order)) public buys;
+    mapping(address => mapping(uint64 => Order)) public sells;
     
     // token => created
-    mapping(address => bool) created;
+    mapping(address => bool) public created;
 
     uint64 private latestOrderId;
     
@@ -60,10 +61,6 @@ contract YouStock {
         if (length > 0) { // target is a contract, call required method
             YouStockReceiver(to).receiveYouStockTokens(token, msg.sender, amount);
         }
-    }
-
-    function balanceOf(address token, address _owner) external view returns(uint64 balance) {
-        return balances[token][_owner];
     }
 
     function createBuy(address token, uint64 amount, uint64 price) payable external returns(uint64 orderId) {
@@ -140,19 +137,5 @@ contract YouStock {
         require(order.owner == msg.sender);
         balances[token][msg.sender] = balances[token][msg.sender] + order.amount;
         order.amount = 0;
-    }
-    
-    function getOrder(address token, uint64 orderId, bool buy) public view 
-    returns (address owner, uint64 amount, uint64 price) {
-        if(buy) {
-            owner = buys[token][orderId].owner;
-            amount = buys[token][orderId].amount;
-            price = buys[token][orderId].price;
-        } 
-        else {
-            owner = sells[token][orderId].owner;
-            amount = sells[token][orderId].amount;
-            price = sells[token][orderId].price;
-        }
     }
 }
