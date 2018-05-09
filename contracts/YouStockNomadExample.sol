@@ -10,20 +10,18 @@ contract YouStockNomadERC20Token is YouStockReceiver, StandardToken {
     address constant YOU_STOCK_TOKEN = 0x0; // address of main youstock user token
     
     constructor() public {
-        totalSupply = 0; //supply represents how much has been transfered to this contract
+        totalSupply = 1000000000000; 
         decimals = 6;
     }
     
     function receiveYouStockTokens(address token, address owner, uint64 amount) external {
         require(msg.sender == YOU_STOCK_MAIN);
         require(token == YOU_STOCK_TOKEN);
-        totalSupply += amount;
         balances[owner] += amount;
     }
     
     function sendBackToYouStock(uint64 amount) external {
         balances[msg.sender].sub(amount);
-        totalSupply -= amount;
         YouStock(YOU_STOCK_MAIN).transfer(YOU_STOCK_TOKEN, msg.sender, amount);
     }
 }
@@ -34,7 +32,7 @@ contract YouStockNomadERC223Token is YouStockReceiver, ERC223Token {
     address constant YOU_STOCK_TOKEN = 0x0; // address of main youstock user token
     
     constructor() public {
-        totalSupply = 0; //supply represents how much has been transfered to this contract
+        totalSupply = 1000000000000; 
         decimals = 6;
         name = "YouStockNomadERC223Token";
         symbol = "YSET";
@@ -43,13 +41,11 @@ contract YouStockNomadERC223Token is YouStockReceiver, ERC223Token {
     function receiveYouStockTokens(address token, address owner, uint64 amount) external {
         require(msg.sender == YOU_STOCK_MAIN);
         require(token == YOU_STOCK_TOKEN);
-        totalSupply += amount;
         balances[owner] += amount;
     }
     
     function sendBackToYouStock(uint64 amount) external {
         balances[msg.sender].sub(amount);
-        totalSupply -= amount;
         YouStock(YOU_STOCK_MAIN).transfer(YOU_STOCK_TOKEN, msg.sender, amount);
     }
 }

@@ -71,6 +71,7 @@ contract YouStock {
 
     function fillBuy(address token, uint64 orderId, uint64 _amount) external {
         Order storage order = buys[token][orderId];
+        require(order.amount > 0);
         uint64 amount;
         if(order.amount < _amount) {
             amount = order.amount;
@@ -111,6 +112,7 @@ contract YouStock {
 
     function fillSell(address token, uint64 orderId, uint64 _amount) payable external {
         Order storage order = sells[token][orderId];
+        require(order.amount > 0);
 
         uint64 amount;
         if(order.amount < _amount) {
@@ -118,8 +120,6 @@ contract YouStock {
         } else {
             amount = _amount;
         }
-        
-        require(amount != 0); //could save some gas in competitive scenarios
         
         uint size = uint(amount) * order.price;
         require(msg.value >= size);
